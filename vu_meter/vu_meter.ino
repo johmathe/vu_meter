@@ -62,12 +62,12 @@ void VU() {
   unsigned long startMillis = millis(); // Start of sample window
   unsigned int peakToPeak = 0;          // peak-to-peak level
   unsigned int signalMax = 0;
-  unsigned int signalMin = 1024;
+  unsigned int signalMin = maximum;
 
   // collect data for 50 mS
   while (millis() - startMillis < sampleWindow) {
     sample = analogRead(ANALOG_INPUT_CHANNEL);
-    if (sample < 1024) // toss out spurious readings
+    if (sample < maximum) // toss out spurious readings
     {
       if (sample > signalMax) {
         signalMax = sample; // save just the max levels
