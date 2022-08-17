@@ -40,29 +40,20 @@ void VU() {
   unsigned int signalMax = 0;
   unsigned int signalMin = maximum;
 
-  // collect data for 50 mS
   int read_count = 0;
   double total_sample = 0;
   while (millis() - startMillis < sampleWindow) {
     total_sample += analogRead(ANALOG_INPUT_CHANNEL);
-//    if (sample < maximum) // toss out spurious readings
-//    {
-//      if (sample > signalMax) {
-//        signalMax = sample; // save just the max levels
-//      } else if (sample < signalMin) {
-//        signalMin = sample; // save just the min levels
-//      }
-//    }
     read_count++;
   }
   sample = total_sample / read_count;
   peakToPeak = signalMax - signalMin;
-  float vu = 20*log10( sample*0.0049/1.2*2 );
+  float vu = 20*log10( sample*0.0049/1.2*1 );
   
   // global_peak_to_peak = ALPHA * peakToPeak + (1 - ALPHA) * global_peak_to_peak;
   vu = max(-20, vu);
   vu = min(3, vu);
   int led = map(vu, -20, 3, 0, VU_LEVELS);
-  printValues(led, peakToPeak, 0); //led*300/VU_LEVELS);
+  printValues(vu, peakToPeak, 0); //led*300/VU_LEVELS);
   
 }

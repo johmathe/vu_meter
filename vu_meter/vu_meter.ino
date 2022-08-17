@@ -4,12 +4,12 @@
 #define PEAK_FALL 10 // Rate of peak falling dot
 #define COLOR_FROM 0
 #define COLOR_TO 255
-#define ANALOG_INPUT_CHANNEL A3
-#define NUM_LEDS 100
+#define ANALOG_INPUT_CHANNEL A0
+#define NUM_LEDS 30
 #define DATA_PIN 2
 #define VU_LEVELS 14  // Numbers of levels onthe vu meter
 
-const int sampleWindow = 30;  // Sample window width in mS (50 mS = 20Hz)
+const int sampleWindow = 100;  // Sample window width in mS (50 mS = 20Hz)
 const uint8_t brightness = 100;
 unsigned int maximum = 1024;
 int peak;
@@ -32,57 +32,50 @@ void setup() {
   Serial.begin(115200);
   FastLED.addLeds<WS2812B, DATA_PIN, RGB>(ledsRGB,
                                           rgb_size_from_rgbw_size(NUM_LEDS));
-  FastLED.setBrightness(brightness);
+  FastLED.setBrightness(20);
   FastLED.show();
+  delay(200);
 }
 
 void loop() { VU(); }
-
-int global_peak_to_peak = 0;
-
+//
+//int global_peak_to_peak = 0;
+//
 void displaySignalValue(int value, int max) {
   const int led_per_bar = NUM_LEDS / max;
   const int edge_led = value * led_per_bar;
   for (int i = 0; i <= NUM_LEDS; i++) {
-    int color = map(i, 0, NUM_LEDS, 0, 255);
+     int color = map(i, 0, NUM_LEDS, 0, 255);
     if (i < edge_led) {
       leds[i] = Wheel(color);
     } else {
       leds[i] = CRGBW(0, 0, 0, 0);
     }
   }
-
-  if (peak > 1 && peak <= NUM_LEDS - 1) {
-    leds[peak] = Wheel(map(peak, 0, NUM_LEDS - 1, 0, 255));
-  }
-
-  FastLED.show();
 }
 
 void VU() {
   unsigned long startMillis = millis(); // Start of sample window
-  unsigned int peakToPeak = 0;          // peak-to-peak level
-  unsigned int signalMax = 0;
-  unsigned int signalMin = maximum;
-
+ 
   // collect data for 50 mS
+  int read_count = 0;
+  double total_sample = 0;
   while (millis() - startMillis < sampleWindow) {
-    sample = analogRead(ANALOG_INPUT_CHANNEL);
-    if (sample < maximum) // toss out spurious readings
-    {
-      if (sample > signalMax) {
-        signalMax = sample; // save just the max levels
-      } else if (sample < signalMin) {
-        signalMin = sample; // save just the min levels
-      }
-    }
+    total_sample += analogRead(ANALOG_INPUT_CHANNEL);
+    read_count++;
   }
-
-  peakToPeak = signalMax - signalMin;
-  // global_peak_to_peak = ALPHA * peakToPeak + (1 - ALPHA) * global_peak_to_peak;
-  int led = map(peakToPeak, 0, maximum, 0, VU_LEVELS) - 1;
-  printValues(sample, peakToPeak, led);
+  sample = total_sample / read_count;
+  
+  float vu = 20*log10( sample*0.0049/1.2*2 );
+  int vu_max = 0;
+  int vu_min = -10;
+  vu = max(vu_min, vu);
+  vu = min(vu_max, vu);
+  int led = map(vu, vu_min, vu_max, 0, VU_LEVELS);
+  printValues(vu, 0, 0); //led*300/VU_LEVELS);
   displaySignalValue(led, VU_LEVELS);
+  FastLED.setBrightness(20);                
+  FastLED.show();
 }
 
-CRGBW Wheel(byte WheelPos) { return CRGBW(0, 255 - WheelPos, 0, WheelPos); }
+CRGBW Wheel(byte WheelPos) { return CRGBW(0, min(2*WheelPos, 255), 0, max(255 - 2*WheelPos, 0)); }
