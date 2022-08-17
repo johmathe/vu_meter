@@ -1,6 +1,5 @@
-#include "FastLED.h"
+#include <FastLED.h>
 #include "FastLED_RGBW.h"
-#include <movingAvg.h>
 
 #define PEAK_FALL 10 // Rate of peak falling dot
 #define COLOR_FROM 0
@@ -12,7 +11,7 @@
 
 const int sampleWindow = 30;  // Sample window width in mS (50 mS = 20Hz)
 const uint8_t brightness = 100;
-int maximum = 1024;
+unsigned int maximum = 1024;
 int peak;
 int dotCount;
 unsigned int sample;
@@ -42,9 +41,11 @@ void loop() { VU(); }
 int global_peak_to_peak = 0;
 
 void displaySignalValue(int value, int max) {
-  for (int i; i <= NUM_LEDS; i++) {
+  const int led_per_bar = NUM_LEDS / max;
+  const int edge_led = value * led_per_bar;
+  for (int i = 0; i <= NUM_LEDS; i++) {
     int color = map(i, 0, NUM_LEDS, 0, 255);
-    if (i < led) {
+    if (i < edge_led) {
       leds[i] = Wheel(color);
     } else {
       leds[i] = CRGBW(0, 0, 0, 0);
@@ -78,27 +79,10 @@ void VU() {
   }
 
   peakToPeak = signalMax - signalMin;
-  global_peak_to_peak = ALPHA * peakToPeak + (1 - ALPHA) * global_peak_to_peak;
-  int led = map(global_peak_to_peak, 0, maximum, 0, NUM_LEDS) - 1;
-  printValues(sample, global_peak_to_peak, led);
-  if (led > peak) {
-    peak = led; // Keep 'peak' dot at top
-  }
-
-  displaySignalValue(led, maximum);
-
-  if (peak > 1 && peak <= NUM_LEDS - 1) {
-    leds[peak] = Wheel(map(peak, 0, NUM_LEDS - 1, 0, 255));
-  }
-
-  FastLED.show();
-
-  if (++dotCount >= PEAK_FALL) { // fall rate
-    if (peak > 0) {
-      peak--;
-    }
-    dotCount = 0;
-  }
+  // global_peak_to_peak = ALPHA * peakToPeak + (1 - ALPHA) * global_peak_to_peak;
+  int led = map(peakToPeak, 0, maximum, 0, VU_LEVELS) - 1;
+  printValues(sample, peakToPeak, led);
+  displaySignalValue(led, VU_LEVELS);
 }
 
 CRGBW Wheel(byte WheelPos) { return CRGBW(0, 255 - WheelPos, 0, WheelPos); }
