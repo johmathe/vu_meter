@@ -14,8 +14,8 @@ const int led_per_bar = ledsPerStrip / VU_LEVELS;
 OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config);
 
 
-const int sampleWindow = 70;  // Sample window width in mS (50 mS = 20Hz)
-const int blank_size = max(floor(led_per_bar * 0.20), 1);
+const int sampleWindow = 80;  // Sample window width in mS (50 mS = 20Hz)
+const int blank_size = max(floor(led_per_bar * 0.10), 1);
 unsigned long int learning_window_ms = 1000; 
 const unsigned long int max_learning_window_ms = 10 * 60 * 1000;
 const float default_min = -20;
@@ -98,26 +98,21 @@ void VU() {
   int read_count = 0;
   double total_sample = 0;
   while (millis() - startMillis < sampleWindow) {
-    total_sample += analogRead(ANALOG_INPUT_CHANNEL);
+    int value = analogRead(ANALOG_INPUT_CHANNEL) - 493;
+    total_sample += abs(value);
     read_count++;
   }
   sample = total_sample / read_count;
 
-  
-  
-  float vu = 20*log10( sample*0.0049/1.2 );
+  float vu = 20*log10(sample*1);
   float vu_min = 0;
   float vu_max = 0;
   get_history_min_max(vu, &vu_min, &vu_max);
-  vu_min = -17;
-//  Serial.print(vu);
-//  Serial.print(",");
-//  Serial.print(vu_min);
-//  Serial.print(",");
-//  Serial.print(vu_max);
-//  Serial.println(",");
+
   
   int led = map(vu, vu_min, vu_max, 0, VU_LEVELS);
+  Serial.print(led);
+  Serial.println(",");
   displaySignalValue(led, VU_LEVELS);   
 }
 

@@ -1,7 +1,6 @@
-#include <FastLED.h>
-#include "FastLED_RGBW.h"
+#include "OctoSK6812.h"
 
-#define NUM_LEDS 300
+#define NUM_LEDS 10
 #define DATA_PIN 2
 
 int led_number = 0;      
@@ -19,16 +18,18 @@ void setup() {
  
 void loop() {
   Serial.println("LED? ");       
-  //while (Serial.available()==0){}             
-  led_number = 20; //Serial.parseInt();   
+  while (Serial.available()==0){}             
+  led_number = Serial.parseInt();   
   FastLED.setBrightness(led_number);                
   for (int i = 0; i <= NUM_LEDS; i++) {
     //if (i == led_number) {
       leds[i] = CRGBW(0, 0, 0, 255);
     //} else {
-    //  leds[i] = CRGBW(0, 0, 0, 0);
-    //}
+    // leds[i] = CRGBW(0, 0, 0, 0);
   }
-
+  int milli  = millis();
   FastLED.show();
+  int time  = millis() - milli;
+  Serial.print("time:");
+  Serial.println(time);
 }
